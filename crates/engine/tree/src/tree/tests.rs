@@ -106,7 +106,10 @@ impl<T: Send + 'static> TestChannel<T> {
         let handle = TestChannelHandle::new(release_tx);
         let test_channel = Self { release: release_rx, tx: wrapped_tx, rx: original_rx };
         // spawn the task that listens and releases stuff
-        std::thread::spawn(move || test_channel.intercept_loop());
+        std::thread::Builder::new()
+            .name("test-intercept".to_string())
+            .spawn(move || test_channel.intercept_loop())
+            .unwrap();
         (original_tx, wrapped_rx, handle)
     }
 

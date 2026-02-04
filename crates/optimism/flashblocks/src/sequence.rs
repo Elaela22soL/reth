@@ -666,12 +666,15 @@ mod tests {
 
             // Spawn a task that sends a complete sequence
             let tx = sequence.block_sequence_broadcaster().clone();
-            std::thread::spawn(move || {
-                let factory = TestFlashBlockFactory::new();
-                let fb0 = factory.flashblock_at(0).build();
-                let complete = FlashBlockCompleteSequence::new(vec![fb0], None).unwrap();
-                let _ = tx.send(complete);
-            });
+            std::thread::Builder::new()
+                .name("flashblocks-test".to_string())
+                .spawn(move || {
+                    let factory = TestFlashBlockFactory::new();
+                    let fb0 = factory.flashblock_at(0).build();
+                    let complete = FlashBlockCompleteSequence::new(vec![fb0], None).unwrap();
+                    let _ = tx.send(complete);
+                })
+                .unwrap();
 
             // Should receive the broadcast
             let received = rx.blocking_recv();

@@ -148,10 +148,13 @@ mod tests {
     async fn test_drop_signal_from_thread() {
         let (signal, shutdown) = signal();
 
-        let _thread = std::thread::spawn(|| {
-            std::thread::sleep(Duration::from_millis(500));
-            drop(signal)
-        });
+        let _thread = std::thread::Builder::new()
+            .name("shutdown-test".to_string())
+            .spawn(|| {
+                std::thread::sleep(Duration::from_millis(500));
+                drop(signal)
+            })
+            .unwrap();
 
         shutdown.await;
     }

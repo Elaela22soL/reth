@@ -84,15 +84,18 @@ mod tests {
         // * we can spawn tasks that do things
         // * those tasks can run to completion and the flag remains unset unless we call cancel
         let mut handles = vec![];
-        for _ in 0..10 {
+        for i in 0..10 {
             let c = c.clone();
-            let handle = std::thread::spawn(move || {
-                for _ in 0..1000 {
-                    if c.is_cancelled() {
-                        return;
+            let handle = std::thread::Builder::new()
+                .name(format!("revm-cancel-{i}"))
+                .spawn(move || {
+                    for _ in 0..1000 {
+                        if c.is_cancelled() {
+                            return;
+                        }
                     }
-                }
-            });
+                })
+                .unwrap();
             handles.push(handle);
         }
 

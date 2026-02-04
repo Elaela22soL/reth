@@ -341,18 +341,21 @@ mod tests {
             let producer = static_file_producer.clone();
             let tx = tx.clone();
 
-            std::thread::spawn(move || {
-                let locked_producer = producer.lock();
-                if i == 0 {
-                    // Let other threads spawn as well.
-                    std::thread::sleep(Duration::from_millis(100));
-                }
-                let targets = locked_producer
-                    .get_static_file_targets(HighestStaticFiles { receipts: Some(1) })
-                    .expect("get static file targets");
-                assert_matches!(locked_producer.run(targets.clone()), Ok(_));
-                tx.send(targets).unwrap();
-            });
+            std::thread::Builder::new()
+                .name(format!("sf-producer-test-{i}"))
+                .spawn(move || {
+                    let locked_producer = producer.lock();
+                    if i == 0 {
+                        // Let other threads spawn as well.
+                        std::thread::sleep(Duration::from_millis(100));
+                    }
+                    let targets = locked_producer
+                        .get_static_file_targets(HighestStaticFiles { receipts: Some(1) })
+                        .expect("get static file targets");
+                    assert_matches!(locked_producer.run(targets.clone()), Ok(_));
+                    tx.send(targets).unwrap();
+                })
+                .unwrap();
         }
 
         drop(tx);
